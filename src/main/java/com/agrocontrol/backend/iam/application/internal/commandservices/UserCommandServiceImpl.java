@@ -1,6 +1,5 @@
 package com.agrocontrol.backend.iam.application.internal.commandservices;
 
-import com.agrocontrol.backend.iam.application.internal.outboundservices.acl.ExternalProfileService;
 import com.agrocontrol.backend.iam.application.internal.outboundservices.hashing.HashingService;
 import com.agrocontrol.backend.iam.application.internal.outboundservices.tokens.TokenService;
 import com.agrocontrol.backend.iam.domain.model.aggregates.User;
@@ -25,16 +24,14 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final RoleRepository roleRepository;
     private final HashingService hashingService;
     private final TokenService tokenService;
-    private final ExternalProfileService externalProfileService;
 
     public UserCommandServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                                  HashingService hashingService, TokenService tokenService,
-                                  ExternalProfileService externalProfileService) {
+                                  HashingService hashingService, TokenService tokenService
+                                  ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
-        this.externalProfileService = externalProfileService;
     }
 
     @Override
@@ -65,15 +62,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         var user = new User(command.email(), hashingService.encode(command.password()), roles);
         userRepository.save(user);
 
-        Long agriculturalProducerId = externalProfileService.createAgriculturalProducer(
-                command.fullName(), command.city(), command.country(),
-                command.phone(), command.dni(), user.getId()
-        );
-
-        if (agriculturalProducerId == 0L) {
-            throw new RuntimeException("Failed to create AgriculturalProducer profile");
-        }
-
         return Optional.of(user);
     }
 
@@ -93,15 +81,6 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Crear el usuario con el rol de distribuidor
         var user = new User(command.email(), hashingService.encode(command.password()), roles);
         userRepository.save(user);
-
-        Long distributorId = externalProfileService.createDistributor(
-                command.fullName(), command.city(), command.country(),
-                command.phone(), command.companyName(), command.ruc(), user.getId()
-        );
-
-        if (distributorId == 0L) {
-            throw new RuntimeException("Failed to create Distributor profile");
-        }
 
         return Optional.of(user);
     }
