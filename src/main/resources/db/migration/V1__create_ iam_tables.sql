@@ -9,7 +9,7 @@ CREATE TABLE roles (
 -- 2. Tabla de Usuarios (¡LA MÁS IMPORTANTE!)
 CREATE TABLE users (
     -- ID DEBE SER VARCHAR para que funcione con JWT y los demás servicios
-                       id BIGINT NOT NULL PRIMARY KEY,
+                       id BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
                        created_at TIMESTAMP,
                        updated_at TIMESTAMP,
 
