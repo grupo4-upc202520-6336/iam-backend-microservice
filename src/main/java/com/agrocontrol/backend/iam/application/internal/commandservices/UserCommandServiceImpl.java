@@ -1,5 +1,6 @@
 package com.agrocontrol.backend.iam.application.internal.commandservices;
-
+import org.springframework.cloud.stream.function.StreamBridge;
+import com.agrocontrol.backend.iam.domain.model.events.UserRegisteredEvent;
 import com.agrocontrol.backend.iam.application.internal.outboundservices.hashing.HashingService;
 import com.agrocontrol.backend.iam.application.internal.outboundservices.tokens.TokenService;
 import com.agrocontrol.backend.iam.domain.model.aggregates.User;
@@ -24,14 +25,16 @@ public class UserCommandServiceImpl implements UserCommandService {
     private final RoleRepository roleRepository;
     private final HashingService hashingService;
     private final TokenService tokenService;
+    private final StreamBridge streamBridge; // <--- Inyectar esto
 
     public UserCommandServiceImpl(UserRepository userRepository, RoleRepository roleRepository,
-                                  HashingService hashingService, TokenService tokenService
+                                  HashingService hashingService, TokenService tokenService, StreamBridge streamBridge
                                   ) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.hashingService = hashingService;
         this.tokenService = tokenService;
+        this.streamBridge = streamBridge;
     }
 
     @Override
@@ -62,6 +65,22 @@ public class UserCommandServiceImpl implements UserCommandService {
         var user = new User(command.email(), hashingService.encode(command.password()), roles);
         userRepository.save(user);
 
+
+        var event = new UserRegisteredEvent(
+                user.getId(),
+                command.email(),
+                command.fullName(),
+                "AGRICULTURAL_PRODUCER",
+                command.city(),
+                command.country(),
+                command.phone(),
+                command.dni(),
+                null, // RUC
+                null  // Company Name
+        );
+
+        streamBridge.send("userRegistered-out-0", event);
+
         return Optional.of(user);
     }
 
@@ -81,6 +100,21 @@ public class UserCommandServiceImpl implements UserCommandService {
         // Crear el usuario con el rol de distribuidor
         var user = new User(command.email(), hashingService.encode(command.password()), roles);
         userRepository.save(user);
+
+        var event = new UserRegisteredEvent(
+                user.getId(),
+                command.email(),
+                command.fullName(),
+                "DISTRIBUTOR",
+                command.city(),
+                command.country(),
+                command.phone(),
+                null, // DNI
+                command.ruc(),
+                command.companyName()
+        );
+
+        streamBridge.send("userRegistered-out-0", event);
 
         return Optional.of(user);
     }
