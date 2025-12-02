@@ -84,16 +84,27 @@ public class WebSecurityConfiguration {
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http.cors(configurer -> configurer.configurationSource(request  -> {
-            var cors = new CorsConfiguration();
-            cors.setAllowedOrigins(List.of("*"));
-            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
-            cors.setAllowedHeaders(List.of("*"));
-            return cors;
-        }));
+//        http.cors(configurer -> configurer.configurationSource(request -> {
+//            var cors = new CorsConfiguration();
+//
+//            // CAMBIO IMPORTANTE AQUÍ:
+//            // En lugar de "*", ponemos la URL exacta de tu Angular
+//            cors.setAllowedOrigins(List.of("http://localhost:4200"));
+//
+//            cors.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE"));
+//            cors.setAllowedHeaders(List.of("*"));
+//
+//            // Opcional: Si en el futuro usas cookies o headers de autorización complejos
+//            cors.setAllowCredentials(true);
+//
+//            return cors;
+//        }));
+
+        http.cors(cors -> cors.disable());
+
         http.csrf(csrfConfigurer -> csrfConfigurer.disable())
                 .exceptionHandling(exceptionHandling -> exceptionHandling.authenticationEntryPoint(unauthorizedRequestHandler))
-                .sessionManagement( customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(customizer -> customizer.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorizeRequests -> authorizeRequests
                         .requestMatchers(
                                 "/api/v1/authentication/**",
@@ -104,10 +115,10 @@ public class WebSecurityConfiguration {
                                 "/swagger-resources/**",
                                 "/webjars/**").permitAll()
                         .anyRequest().authenticated());
+
         http.authenticationProvider(authenticationProvider());
         http.addFilterBefore(authorizationRequestFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
-
     }
 
     /**
